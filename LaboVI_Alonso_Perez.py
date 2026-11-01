@@ -65,7 +65,7 @@ def borrar():
         polinomio[i].insert(0, 0)
 
 def prueba():
-    valores_de_prueba = np.array([-25,82,0,8,0,1])
+    valores_de_prueba = np.array([-25,82,0,-8,0,1])
     for restantes in range(tamanio - 6):
         valores_de_prueba = np.append(valores_de_prueba, 0)
     for i in range(tamanio):
@@ -94,8 +94,15 @@ label_alerta.pack(padx= 12,pady= 5, anchor= "w")
 #Funcion para evaluar el valor del polinomio en cierto x
 def evaluar_en(x):
     resultado = 0
+
     for i in range(tamanio):
-        resultado += float(polinomio[i].get())*(x**i)
+        coeficiente = polinomio[i].get().strip()
+
+        if coeficiente == "":
+            coeficiente = 0
+
+        resultado += float(coeficiente)*(x**i)
+
     return resultado
 
 #Metodo de biseccion
@@ -198,6 +205,35 @@ def gauss(A, B, pivoteo=False):
         X[i] = (B[i] - suma) / A[i, i]
 
     return X
+
+
+# Metodo de Simpson 1/3 compuesto
+def simpson_compuesta(a, b, n):
+
+    if n < 2 or n % 2 != 0:
+        raise ValueError("La cantidad de segmentos debe ser par y mayor o igual a 2.")
+
+    h = (b - a) / n
+
+    # Se evalúan los extremos del intervalo
+    resultado = evaluar_en(a) + evaluar_en(b)
+
+    # Se suman los puntos interiores
+    suma_impares = 0
+    suma_pares = 0
+
+    for i in range(1, n):
+        x = a + i * h
+
+        if i % 2 != 0:
+            suma_impares += evaluar_en(x)
+        else:
+            suma_pares += evaluar_en(x)
+
+    resultado += 4 * suma_impares
+    resultado += 2 * suma_pares
+
+    return (h / 3) * resultado
 
 
 #Botones para cada metodo
@@ -316,6 +352,8 @@ for i in range(4):
             font=("times new roman", 8),
             width=7
         )
+        entrada.bind("<KeyRelease>", digit)
+
 
         entrada.grid(
             row=i+1,
@@ -485,5 +523,102 @@ label_alerta_sistema = tk.Label(
 )
 
 label_alerta_sistema.pack(padx=12, pady=3, anchor="w")
+
+# Seccion de calculo de integrales
+tk.Label(ventana, text="Calculo de una integral:",font=("times new roman", 10)).pack(padx=12, pady=5, anchor="w")
+
+frame_integral = tk.Frame(
+    ventana, borderwidth=2, relief="solid")
+frame_integral.pack(padx=5, pady=5)
+
+# Entradas para los parametros
+frame_integral_nums = tk.Frame(frame_integral)
+frame_integral_nums.pack(side="left", padx=15, pady=10)
+
+tk.Label(frame_integral_nums, text="Limite inferior (a):",font=("times new roman", 8)).grid(row=0, column=0)
+
+a_integral = tk.Entry(frame_integral_nums, font=("times new roman", 8), width=8)
+a_integral.grid(row=0, column=1, padx=5)
+a_integral.insert(0, "0")
+a_integral.bind("<KeyRelease>", digit)
+
+tk.Label(frame_integral_nums, text="Limite superior (b):",font=("times new roman", 8)).grid(row=1, column=0)
+
+b_integral = tk.Entry(frame_integral_nums, font=("times new roman", 8), width=8)
+b_integral.grid(row=1, column=1, padx=5)
+b_integral.insert(0, "2")
+b_integral.bind("<KeyRelease>", digit)
+
+tk.Label(frame_integral_nums, text="Segmentos (n):",font=("times new roman", 8)).grid(row=2, column=0)
+
+n_integral = tk.Entry(frame_integral_nums, font=("times new roman", 8), width=8)
+n_integral.grid(row=2, column=1, padx=5)
+n_integral.insert(0, "2")
+n_integral.bind("<KeyRelease>", digit)
+
+
+# Funcion para ejecutar el calculo
+def calcular_integral():
+    try:
+		# Verificar que ningun campo este vacio
+        if (a_integral.get().strip() == "" or
+            b_integral.get().strip() == "" or
+            n_integral.get().strip() == ""):
+
+            raise ValueError("Completa todos los campos.")
+        
+        a = float(a_integral.get())
+        b = float(b_integral.get())
+        n = int(n_integral.get())
+
+        if not np.isfinite(a) or not np.isfinite(b):
+            raise ValueError("Los limites deben ser valores finitos.")
+
+        if n < 2 or n % 2 != 0:
+            raise ValueError("n debe ser par y mayor o igual a 2.")
+
+        resultado = simpson_compuesta(a, b, n)
+
+        if not np.isfinite(resultado):
+            raise ValueError("El resultado no es finito.")
+
+        label_resultado_integral.config(
+            text=f"{resultado:.8g}", fg="black")
+
+        label_alerta_integral.config(text="")
+
+    except ValueError as error:
+        label_resultado_integral.config(text="")
+        label_alerta_integral.config(
+            text=f"Error: {error}", fg="red")
+
+
+# Boton de calculo
+tk.Button(frame_integral, text="Calcular",
+          font=("times new roman", 8),
+          command=calcular_integral).pack(
+              side="left", padx=15, pady=10)
+
+
+# Resultados
+frame_integral_resultado = tk.Frame(frame_integral)
+frame_integral_resultado.pack(side="left", padx=15, pady=10)
+
+tk.Label(frame_integral_resultado, text="Integral aproximada:",
+         font=("times new roman", 8)).pack()
+
+label_resultado_integral = tk.Label(
+    frame_integral_resultado,
+    font=("times new roman", 10),
+    relief="groove",
+    width=12)
+
+label_resultado_integral.pack(pady=3)
+
+label_alerta_integral = tk.Label(
+    ventana, text="", font=("times new roman", 9), fg="red")
+
+label_alerta_integral.pack(padx=12, pady=3, anchor="w")
+
 
 ventana.mainloop()
