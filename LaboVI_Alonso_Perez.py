@@ -1,7 +1,7 @@
 from re import A
 import numpy as np
 import tkinter as tk
-from greek_alphabet import Alphabet as alph
+#from greek_alphabet import Alphabet as alph
 
 #Informatica 2 - 2026
 #Integrantes: Alonso Giambelluca Giuliano, Perez Genaro.
@@ -36,6 +36,7 @@ def digit(event):
         if ((48 > event.keycode) or (57 < event.keycode) and event.keycode != 190 and event.keycode != 189):
             if (event.keysym != ("Left") and event.keysym != ("Right") and event.keysym != ("BackSpace")):
                 raise ValueError
+        
     except ValueError:
         #Saltea el caso de entrada vacia
         if(event.widget.get().strip() != ""):
@@ -94,7 +95,7 @@ label_alerta.pack(padx= 12,pady= 5, anchor= "w")
 def evaluar_en(x):
     resultado = 0
     for i in range(tamanio):
-        resultado += float(polinomio[i].get())*(x^i)
+        resultado += float(polinomio[i].get())*(x**i)
     return resultado
 
 #Metodo de biseccion
@@ -153,6 +154,51 @@ def metodo_raiz(event):
         metodo = "secante"
 
 
+#Metodo de gauss con o sin pivoteo parcial
+def gauss(A, B, pivoteo=False):
+    A = np.array(A, dtype=float).copy()
+    B = np.array(B, dtype=float).copy()
+
+    n = len(B)
+
+    # Eliminacion hacia adelante
+    for k in range(n):
+
+        # Pivoteo parcial
+        if pivoteo:
+            fila_max = k + np.argmax(np.abs(A[k:, k]))
+
+            A[[k, fila_max]] = A[[fila_max, k]]
+            B[[k, fila_max]] = B[[fila_max, k]]
+
+        # Verificacion del pivote
+        if abs(A[k, k]) < 1e-12:
+            raise ValueError(
+                f"Pivote nulo en la columna {k + 1}."
+            )
+
+        # Anulacion de los elementos debajo del pivote
+        for i in range(k + 1, n):
+
+            factor = A[i, k] / A[k, k]
+
+            A[i, k:] -= factor * A[k, k:]
+            B[i] -= factor * B[k]
+
+    # Sustitucion regresiva
+    X = np.zeros(n)
+
+    for i in range(n - 1, -1, -1):
+
+        suma = 0
+
+        for j in range(i + 1, n):
+            suma += A[i, j] * X[j]
+
+        X[i] = (B[i] - suma) / A[i, i]
+
+    return X
+
 
 #Botones para cada metodo
 tk.Label(frame_raices_metodo, text= "Metodo:", font= ("times new roman", 8)).grid(row=0, column=0)
@@ -193,7 +239,7 @@ def precision(event):
 #Botones para elegir el tipo de error porcentual minimo
 tk.Label(frame_raices_nums, text= "Selecciona el tipo de precision:", font= ("times new roman", 8)
          ).grid(row= 1, column=0, columnspan=4, pady= 2)
-epsilon = alph.Epsilon
+epsilon = "ε"#alph.Epsilon
 error_s = tk.Button(frame_raices_nums, text= f"{epsilon}s (%) = ", font= ("times new roman", 8), state= "disabled", background= "#d9d9d9")
 error_s.grid(row= 2, column=0, pady= 2)
 error_s.bind("<ButtonRelease-1>", precision)
@@ -208,32 +254,236 @@ cifras_sig_num.grid(row= 2, column= 4, pady= 2)
 cifras_sig_num.bind("<KeyRelease>", digit)
 
 #Maximas iteraciones
-tk.Label(frame_raices_nums, text= "Maximas iteraciones =", font= ("times new roman", 8)
-         ).grid(row= 3, column= 1, columnspan= 2, pady= 2)
+tk.Label(frame_raices_nums, text= "Maximas iteraciones =", font= ("times new roman", 8)).grid(row= 3, column= 1, columnspan= 2, pady= 2)
 iter_max = tk.Entry(frame_raices_nums, font= ("times new roman", 8), relief="sunken", width= 8)
 iter_max.grid(row= 3, column= 3, pady= 2)
 iter_max.bind("<KeyRelease>", digit)
 
-tk.Button(frame_raices_calculo, text= "Calcular", font= ("times new roman", 8), command = calcular
-          ).grid(row= 0, column= 0, columnspan= 2, pady= 2)
-tk.Label(frame_raices_calculo, text= "Raiz =", font= ("times new roman", 8)
-         ).grid(row= 1, column= 0, pady= 2)
+tk.Button(frame_raices_calculo, text= "Calcular", font= ("times new roman", 8), command = calcular).grid(row= 0, column= 0, columnspan= 2, pady= 2)
+tk.Label(frame_raices_calculo, text= "Raiz =", font= ("times new roman", 8)).grid(row= 1, column= 0, pady= 2)
 raiz = tk.Label(frame_raices_calculo, font= ("times new roman", 8), relief= "groove", width= 8)
 raiz.grid(row= 1, column= 1, pady= 2)
-tk.Label(frame_raices_calculo, text= "Iteraciones =", font= ("times new roman", 8)
-         ).grid(row= 2, column= 0, pady= 2)
+tk.Label(frame_raices_calculo, text= "Iteraciones =", font= ("times new roman", 8)).grid(row= 2, column= 0, pady= 2)
 iter_total = tk.Label(frame_raices_calculo, font= ("times new roman", 8), relief= "groove", width= 8)
 iter_total.grid(row= 2, column= 1, pady= 2)
-tk.Label(frame_raices_calculo, text= f"{epsilon}a (%) =", font= ("times new roman", 8)
-         ).grid(row= 3, column= 0, pady= 2)
+tk.Label(frame_raices_calculo, text= f"{epsilon}a (%) =", font= ("times new roman", 8)).grid(row= 3, column= 0, pady= 2)
 error_a = tk.Label(frame_raices_calculo, font= ("times new roman", 8), relief= "groove", width= 8)
 error_a.grid(row= 3, column= 1, pady= 2)
-tk.Label(frame_raices_calculo, text= f"f(Raiz) =", font= ("times new roman", 8)
-         ).grid(row= 4, column= 0, pady= 2)
+tk.Label(frame_raices_calculo, text= f"f(Raiz) =", font= ("times new roman", 8)).grid(row= 4, column= 0, pady= 2)
 evaluar_raiz = tk.Label(frame_raices_calculo, font= ("times new roman", 8), relief= "groove", width= 8)
 evaluar_raiz.grid(row= 4, column= 1, pady= 2)
 
 
 
+#Sistema de ecuaciones lineales
+
+tk.Label(
+    ventana,
+    text="Sistemas de ecuaciones lineales:",
+    font=("times new roman", 10)
+).pack(padx=12, pady=5, anchor="w")
+
+frame_sistema = tk.Frame(
+    ventana,
+    borderwidth=2,
+    relief="solid"
+)
+frame_sistema.pack(padx=5, pady=5)
+
+# Matriz de entradas
+entradas_sistema = []
+
+tk.Label(
+    frame_sistema,
+    text="Coeficientes",
+    font=("times new roman", 8)
+).grid(row=0, column=0, columnspan=4)
+
+tk.Label(
+    frame_sistema,
+    text="Termino independiente",
+    font=("times new roman", 8)
+).grid(row=0, column=4)
+
+for i in range(4):
+
+    fila = []
+
+    for j in range(5):
+
+        entrada = tk.Entry(
+            frame_sistema,
+            font=("times new roman", 8),
+            width=7
+        )
+
+        entrada.grid(
+            row=i+1,
+            column=j,
+            padx=4,
+            pady=4
+        )
+
+        fila.append(entrada)
+
+    entradas_sistema.append(fila)
+
+
+# Funcion para cargar los valores de prueba
+def prueba_sistema():
+
+    valores = [
+        [2, 2, 1, -1, 5],
+        [2, -2, 6, -4, 0],
+        [2, 2, 1, 1, 13],
+        [1, 5, -4, -2, -9]
+    ]
+
+    for i in range(4):
+        for j in range(5):
+
+            entradas_sistema[i][j].delete(0, tk.END)
+
+            entradas_sistema[i][j].insert(
+                0, str(valores[i][j])
+            )
+
+
+# Funcion para borrar los campos
+def borrar_sistema():
+
+    for i in range(4):
+        for j in range(5):
+
+            entradas_sistema[i][j].delete(0, tk.END)
+
+
+# Funcion para obtener los datos y ejecutar Gauss
+def calcular_sistema(pivoteo):
+
+    try:
+
+        A = []
+        B = []
+
+        for i in range(4):
+
+            fila = []
+
+            for j in range(4):
+
+                valor = entradas_sistema[i][j].get()
+
+                if valor.strip() == "":
+                    raise ValueError("Hay campos vacios.")
+
+                fila.append(float(valor))
+
+            termino = entradas_sistema[i][4].get()
+
+            if termino.strip() == "":
+                raise ValueError("Hay campos vacios.")
+
+            A.append(fila)
+            B.append(float(termino))
+
+        resultado = gauss(A, B, pivoteo)
+
+        for i in range(4):
+
+            resultados_sistema[i].config(
+                text=f"{resultado[i]:.8g}",
+                fg="black"
+            )
+        label_alerta_sistema.config(text="")
+         
+    
+    except ValueError as error:
+
+        for label in resultados_sistema:
+            label.config(text="", fg="red")
+
+        label_alerta_sistema.config(
+            text=f"Error: {error}",
+            fg="red"
+        )
+
+
+# Botones
+tk.Button(
+    frame_sistema,
+    text="Valores de prueba",
+    command=prueba_sistema,
+    font=("times new roman", 8)
+).grid(row=5, column=0, columnspan=2, pady=5)
+
+tk.Button(
+    frame_sistema,
+    text="Borrar",
+    command=borrar_sistema,
+    font=("times new roman", 8)
+).grid(row=5, column=2, pady=5)
+
+tk.Button(
+    frame_sistema,
+    text="Gauss sin pivoteo",
+    command=lambda: calcular_sistema(False),
+    font=("times new roman", 8)
+).grid(row=5, column=3, pady=5)
+
+tk.Button(
+    frame_sistema,
+    text="Gauss con pivoteo",
+    command=lambda: calcular_sistema(True),
+    font=("times new roman", 8)
+).grid(row=5, column=4, pady=5)
+
+
+
+# Frame para mostrar los resultados
+frame_resultado_sistema = tk.Frame(
+    ventana,
+    borderwidth=2,
+    relief="solid"
+)
+
+frame_resultado_sistema.pack(padx=5, pady=5)
+
+# Labels para cada incognita
+tk.Label(
+    frame_resultado_sistema,
+    text="Resultados:",
+    font=("times new roman", 9)
+).grid(row=0, column=0, columnspan=4, pady=3)
+
+resultados_sistema = []
+
+for i in range(4):
+
+    tk.Label(
+        frame_resultado_sistema,
+        text=f"x{i+1} = ",
+        font=("times new roman", 9)
+    ).grid(row=1, column=2*i, padx=3, pady=3)
+
+    label = tk.Label(
+        frame_resultado_sistema,
+        text="",
+        font=("times new roman", 9),
+        relief="groove",
+        width=10
+    )
+
+    label.grid(row=1, column=2*i+1, padx=3, pady=3)
+
+    resultados_sistema.append(label)
+
+label_alerta_sistema = tk.Label(
+    ventana,
+    text="",
+    font=("times new roman", 9)
+)
+
+label_alerta_sistema.pack(padx=12, pady=3, anchor="w")
 
 ventana.mainloop()
