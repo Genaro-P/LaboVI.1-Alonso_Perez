@@ -94,23 +94,25 @@ def evaluar_en(x):
 def biseccion_f(x1, x2):
     if(evaluar_en(x1)*evaluar_en(x2)<=0):
         label_alerta.config(text= "")
-        iteraciones = 1
+        iteraciones = 0
         epsilon_a = 10000 #Valor arbitrariamente grande
         aproximacion_anterior = "x1"
         while(epsilon_a > error_max and iteraciones < maximo):
             if(evaluar_en(x1)==0):
                 mitad = x1
+                epsilon_a = 0
                 break
             elif(evaluar_en(x2)==0):
                 mitad = x2
+                epsilon_a = 0
                 break
             else:
                 mitad = (x2 + x1)/2
                 if(iteraciones > 1):
-                    if(aproximacion_anterior == "x1"):
-                        epsilon_a = (abs(x1-mitad))/x1
-                    else:
-                        epsilon_a = (abs(x2-mitad))/x2
+                    if(aproximacion_anterior == "x1" and x1 != 0):
+                        epsilon_a = abs((x1-mitad)/x1)
+                    elif(x2 != 0):
+                        epsilon_a = abs((x2-mitad)/x2)
                 if(evaluar_en(x1)*evaluar_en(mitad)<=0):
                     aproximacion_anterior = "x2"
                     x2 = mitad
@@ -120,6 +122,10 @@ def biseccion_f(x1, x2):
                 iteraciones += 1
     else:
         label_alerta.config(text= "El intervalo elegido no es valido, ya que la funcion en ambos extremos tiene el mismo signo.")
+        iter_total.config(text= "")
+        raiz.config(text= "")
+        evaluar_raiz.config(text= "")
+        epsilon_a_cartel.config(text= "-")
         return
     iter_total.config(text= f"{iteraciones}")
     raiz.config(text= f"{mitad:.7f}")
@@ -132,30 +138,42 @@ def biseccion_f(x1, x2):
 
 #Metodo de Newton - Raphson
 def newt_raph_f(x1):
-    pendiente = (evaluar_en(x1+0.00001)-evaluar_en(x1-0.00001))/0.00002 #Calcula la derivada con h = 0.00001
+    pendiente = (evaluar_en(x1+0.000001)-evaluar_en(x1-0.000001))/0.000002 #Calcula la derivada con h = 0.000001
     try:
         x2 = x1 - evaluar_en(x1)/pendiente
-    except:
+    except ZeroDivisionError:
         label_alerta.config(text= "El calculo seleccionado diverge.")
+        iter_total.config(text= "")
+        raiz.config(text= "")
+        evaluar_raiz.config(text= "")
+        epsilon_a_cartel.config(text= "-")
         return
     label_alerta.config(text= "")
     iteraciones = 1
     epsilon_a = 10000 
     while(epsilon_a > error_max and iteraciones < maximo):
         x1 = x2
-        nueva_pendiente = (evaluar_en(x1+0.0001)-evaluar_en(x1-0.0001))/0.0002
+        nueva_pendiente = (evaluar_en(x1+0.000001)-evaluar_en(x1-0.000001))/0.000002
         #Este if() verifica que la pendiente no sea nula o que no tenga el signo 
         #contrario al de la pendiente anterior, por los riesgos a que la aproximacion diverga
-        if(abs(nueva_pendiente) > 10**(-15) and pendiente*nueva_pendiente>0): 
+        if(abs(nueva_pendiente) > 10**(-15)): 
             pendiente = nueva_pendiente
             x2 = x1 - evaluar_en(x1)/pendiente
             if(x1 != 0):
-                epsilon_a = abs(x1-x2)/x1
+                epsilon_a = abs((x1-x2)/x1)
+            else:
+                if(evaluar_en(x2)<10**(-15)):
+                    epsilon_a = 0
+                    break
             iteraciones += 1
             label_alerta.config(text= "")
         else:
             label_alerta.config(text= "El calculo seleccionado diverge.")
-            break
+            iter_total.config(text= "")
+            raiz.config(text= "")
+            evaluar_raiz.config(text= "")
+            epsilon_a_cartel.config(text= "-")
+            return
     iter_total.config(text= f"{iteraciones}")
     raiz.config(text= f"{x2:.7f}")
     evaluar_raiz.config(text= f"{evaluar_en(x2):.5}")
@@ -169,8 +187,12 @@ def secante_f(x1, x2):
     pendiente = (evaluar_en(x2)-evaluar_en(x1))/(x2-x1)
     try:
         aproximacion = x1 - evaluar_en(x1)/pendiente
-    except:
-        label_alerta.config("El calculo seleccionado diverge.")
+    except ZeroDivisionError:
+        label_alerta.config(text= "El calculo seleccionado diverge.")
+        iter_total.config(text= "")
+        raiz.config(text= "")
+        evaluar_raiz.config(text= "")
+        epsilon_a_cartel.config(text= "-")
         return
     label_alerta.config(text= "")
     iteraciones = 1
@@ -178,17 +200,35 @@ def secante_f(x1, x2):
     while(epsilon_a > error_max and iteraciones < maximo):
         x1 = x2
         x2 = aproximacion
-        nueva_pendiente = (evaluar_en(x2)-evaluar_en(x1))/(x2-x1)
+        try:
+            nueva_pendiente = (evaluar_en(x2)-evaluar_en(x1))/(x2-x1)
+        except ZeroDivisionError:
+            if(evaluar_en(aproximacion) < 10**(-15)):
+                epsilon_a = 0
+                break
+            else:
+                label_alerta.config(text= "El calculo seleccionado diverge.")
+                iter_total.config(text= "")
+                raiz.config(text= "")
+                evaluar_raiz.config(text= "")
+                epsilon_a_cartel.config(text= "-")
+                return
         if(abs(nueva_pendiente) > 10**(-15)): 
             pendiente = nueva_pendiente
             aproximacion = x1 - evaluar_en(x1)/pendiente
-            if(x1 != 0):
-                epsilon_a = abs(x1-aproximacion)/x1
+            if(x2 != 0):
+                epsilon_a = abs((x2-aproximacion)/x2)
+            elif(evaluar_en(aproximacion) < 10**(-15)):
+                epsilon_a = 0
             iteraciones += 1
             label_alerta.config(text= "")
         else:
             label_alerta.config(text= "El calculo seleccionado diverge.")
-            break
+            iter_total.config(text= "")
+            raiz.config(text= "")
+            evaluar_raiz.config(text= "")
+            epsilon_a_cartel.config(text= "-")
+            return
     iter_total.config(text= f"{iteraciones}")
     raiz.config(text= f"{aproximacion:.7f}")
     evaluar_raiz.config(text= f"{evaluar_en(aproximacion):.5}")
